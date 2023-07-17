@@ -1,0 +1,5 @@
+aws-lambda-powertools
+dependency_injector
+pydantic
+boto3-stubs[cognito-idp,dynamodb]
+python-dotenv
