@@ -5,7 +5,6 @@ from typing import Callable
 
 # Third-party
 import boto3
-import moto
 import pytest
 from aws_lambda_powertools import Logger
 from mypy_boto3_cognito_idp import CognitoIdentityProviderClient
@@ -34,7 +33,6 @@ def mocked_configuration(
 
 
 @pytest.fixture()
-@moto.mock_dynamodb
 def _dynamodb_table(mocked_configuration: Configuration) -> Table:
     _dynamodb_resource = boto3.resource(
         "dynamodb", mocked_configuration.region_name
@@ -46,7 +44,6 @@ def _dynamodb_table(mocked_configuration: Configuration) -> Table:
 
 
 @pytest.fixture()
-@moto.mock_cognitoidp
 def _cognito_client(
     mocked_configuration: Configuration,
 ) -> CognitoIdentityProviderClient:
@@ -69,7 +66,6 @@ def account_manager(
 
 @pytest.fixture()
 def setup_cognito_user_pool():
-    @moto.mock_cognitoidp
     def _setup_cognito_user_pool() -> str:
         cognito_client: CognitoIdentityProviderClient = boto3.client(
             "cognito-idp", region_name="us-east-1"
@@ -118,7 +114,6 @@ def setup_cognito_user_pool():
 def setup_dynamodb_table(
     account_table_name: str,
 ) -> Callable[[], None]:
-    @moto.mock_dynamodb
     def _setup_dynamodb_table() -> None:
         dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
 
