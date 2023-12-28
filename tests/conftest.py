@@ -23,7 +23,7 @@ def account_table_name() -> str:
 
 @pytest.fixture()
 def mocked_configuration(
-    account_table_name: str, monkeypatch
+    account_table_name: str
 ) -> Configuration:
     config = unittest.mock.create_autospec(Configuration)
     config.account_table_name = account_table_name
