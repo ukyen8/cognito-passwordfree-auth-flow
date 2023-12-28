@@ -70,7 +70,7 @@ def account_manager(
 @pytest.fixture()
 def setup_cognito_user_pool():
     @moto.mock_cognitoidp
-    def _setup_cognito_user_pool() -> [str, str]:
+    def _setup_cognito_user_pool() -> str:
         cognito_client: CognitoIdentityProviderClient = boto3.client(
             "cognito-idp", region_name="us-east-1"
         )
