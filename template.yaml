@@ -12,6 +12,9 @@ Parameters:
     Type: String
     Description: "The name of the User Pool to be created with"
     Default: "passwordless-user-auth"
+  AccountTableName:
+    Type: String
+    Default: "AccountManagementTable"
 
 Resources:
   DefineAuthChallenge:
@@ -160,6 +163,93 @@ Resources:
       FunctionName: !GetAtt PostAuthentication.Arn
       Principal: cognito-idp.amazonaws.com
       SourceArn: !GetAtt UserPool.Arn
+
+  AccountManagement:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: functions.account.lambda_handler.handler
+      Runtime: python3.10
+      Role: !GetAtt AccountManagementRole.Arn
+      Environment:
+        Variables:
+          REGION_NAME: !Ref AWS::Region
+          ACCOUNT_TABLE_NAME: !Ref AccountTableName
+          APP_CLIENT_ID: !Ref UserPoolClient
+      Events:
+        CreateAccount:
+          Type: Api
+          Properties:
+            Path: /accounts
+            Method: POST
+            RestApiId:
+              Ref: AccountManagementApiGateway
+        GetAccount:
+          Type: Api
+          Properties:
+            Path: /accounts/{account_id}
+            Method: GET
+            RestApiId:
+              Ref: AccountManagementApiGateway
+        PatchAccount:
+          Type: Api
+          Properties:
+            Path: /accounts
+            Method: PATCH
+            RestApiId:
+              Ref: AccountManagementApiGateway
+
+  AccountTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref AccountTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: account_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: account_id
+          KeyType: HASH
+
+  AccountManagementApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: live
+      OpenApiVersion: 3.0.1
+      Name: AccountManagementApi
+      Auth:
+        ApiKeyRequired: TRUE
+        UsagePlan:
+          CreateUsagePlan: PER_API
+
+  AccountManagementRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: DynamoDBTablePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Get*
+                  - dynamodb:Query
+                  - dynamodb:Update*
+                  - dynamodb:PutItem
+                  - dynamodb:DeleteItem
+                Resource:
+                  - !GetAtt AccountTable.Arn
 
 Outputs:
   UserPoolId:
